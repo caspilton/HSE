@@ -8,16 +8,20 @@ router = APIRouter(
     tags=["Задачи"],
 )
 
-@router.post("", response_model=STaskId)
-async def add_task(task: STaskAdd = Depends()):
+@router.post("", response_model=STask)
+async def add_task(task: STaskAdd):
     new_task_id = await TaskRepository.add_task(task)
-    return {"id": new_task_id}
+    return await TaskRepository.get_task(new_task_id)
 
+@router.get("", response_model=list[STask])
 @router.get("", response_model=list[STask])
 async def get_tasks(sort_by: str = "created_date"):
     valid_fields = ["title", "status", "created_date", "priority"]
     if sort_by not in valid_fields:
-        raise HTTPException(400, "Недопустимый параметр сортировки")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid sort_by parameter. Allowed: {valid_fields}"
+        )
     return await TaskRepository.get_tasks(sort_by)
 
 @router.patch("/{task_id}")

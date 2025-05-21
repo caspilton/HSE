@@ -12,5 +12,9 @@ async def lifespan(app: FastAPI):
     yield
     print("Выключение")
 
-app = FastAPI(lifespan=lifespan)
+app: FastAPI = FastAPI(lifespan=lifespan)
 app.include_router(tasks_router)
+
+@app.get("/")
+async def root():
+    return {"message": "Hello FastAPI!"}

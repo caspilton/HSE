@@ -1,6 +1,7 @@
 from sqlalchemy import select, update, delete
 from database import new_session, TaskOrm
 from schemas import STaskAdd, STaskUpdate
+from typing import Optional
 
 class TaskRepository:
     @classmethod
@@ -12,6 +13,13 @@ class TaskRepository:
             await session.flush()
             await session.commit()
             return task.id
+
+    @classmethod
+    async def get_task(cls, task_id: int) -> Optional[TaskOrm]:
+        async with new_session() as session:
+            stmt = select(TaskOrm).where(TaskOrm.id == task_id)
+            result = await session.execute(stmt)
+            return result.scalars().first()
 
     @classmethod
     async def get_tasks(cls, sort_by: str = "created_date"):
@@ -43,6 +51,8 @@ class TaskRepository:
 
     @classmethod
     async def search_tasks(cls, search_query: str):
+        if not search_query.strip():
+            return []
         async with new_session() as session:
             stmt = select(TaskOrm).where(
                 (TaskOrm.title.ilike(f"%{search_query}%")) |
@@ -53,6 +63,8 @@ class TaskRepository:
 
     @classmethod
     async def get_top_priority_tasks(cls, limit: int):
+        if limit <= 0:
+            return []
         async with new_session() as session:
             stmt = select(TaskOrm).order_by(
                 TaskOrm.priority.desc()

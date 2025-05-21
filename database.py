@@ -38,3 +38,26 @@ async def create_tables():
 async def delete_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Model.metadata.drop_all)
+
+@classmethod
+async def get_top_priority_tasks(cls, limit: int):
+    if limit <= 0:
+        return []
+    async with new_session() as session:
+        stmt = select(TaskOrm).order_by(
+            TaskOrm.priority.desc()
+        ).limit(limit)
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+@classmethod
+async def search_tasks(cls, search_query: str):
+    if not search_query.strip():
+        return []
+    async with new_session() as session:
+        stmt = select(TaskOrm).where(
+            (TaskOrm.title.ilike(f"%{search_query}%")) |
+            (TaskOrm.description.ilike(f"%{search_query}%"))
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()

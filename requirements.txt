@@ -3,3 +3,4 @@ uvicorn
 sqlalchemy
 aiosqlite
 pydantic~=2.10.6
+pytest
