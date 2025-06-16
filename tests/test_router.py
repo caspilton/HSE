@@ -3,6 +3,8 @@ from fastapi import status
 from main import app
 import pytest
 
+from database import delete_tables, create_tables
+
 client = TestClient(app)
 
 
@@ -56,7 +58,9 @@ def test_sql_injection_attempt(test_client):
     assert response.status_code == 200  # Должен безопасно обработать
     assert len(response.json()) == 0    # Но не возвращать данные
 
-def test_get_empty_tasks_list(test_client):
+async def test_get_empty_tasks_list(test_client):
+    await delete_tables()
+    await create_tables()
     response = test_client.get("/tasks")
     assert response.status_code == 200
     assert len(response.json()) == 0  # После очистки БД в начале каждого теста

@@ -2,22 +2,37 @@ from database import TaskOrm  # Добавьте импорт
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from repository import TaskRepository
-from schemas import STaskAdd, STaskUpdate
+from schemas import STaskAdd, STaskUpdate, TaskStatus
 
 
 @pytest.mark.asyncio
 async def test_add_task_success(mocker):
+    mock_task = mocker.MagicMock()
+    mock_task.id = 1
+
     mock_session = AsyncMock()
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.add = AsyncMock()
+    mock_session.add = mocker.MagicMock()
+    mock_session.flush = AsyncMock()
     mock_session.commit = AsyncMock()
 
-    mocker.patch("database.new_session", return_value=mock_session)
+    mock_session_ctx = mocker.MagicMock()
+    mock_session_ctx.__aenter__.return_value = mock_session
+    mock_session_ctx.__aexit__.return_value = None
 
-    task_data = STaskAdd(title="Test", priority=1)
+    mocker.patch("repository.new_session", return_value=mock_session_ctx)
+
+    mocker.patch("repository.TaskOrm", return_value=mock_task)
+
+    task_data = STaskAdd(
+        title="Test",
+        description="Test",
+        status=TaskStatus.PENDING,
+        priority=1
+    )
+
     task_id = await TaskRepository.add_task(task_data)
-
-    mock_session.add.assert_called_once()
+    assert task_id == 1
+    mock_session.add.assert_called_once_with(mock_task)
 
 @pytest.mark.asyncio
 async def test_update_task_not_found(mocker):
@@ -33,10 +48,17 @@ async def test_update_task_not_found(mocker):
 @pytest.mark.asyncio
 async def test_search_tasks(mocker):
     mock_task = TaskOrm(title="Test", description="Test search")
-    mock_session = AsyncMock()
-    mock_session.execute.return_value.scalars.return_value.all.return_value = [mock_task]
 
-    mocker.patch("database.new_session", return_value=mock_session)
+    mock_result = mocker.MagicMock()
+    mock_result.scalars.return_value.all.return_value = [mock_task]
+
+    mock_session = AsyncMock()
+    mock_session.execute.return_value = mock_result
+
+    mock_session_ctx = mocker.MagicMock()
+    mock_session_ctx.__aenter__.return_value = mock_session
+
+    mocker.patch("repository.new_session", return_value=mock_session_ctx)
 
     tasks = await TaskRepository.search_tasks("test")
     assert len(tasks) == 1

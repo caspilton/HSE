@@ -2,6 +2,7 @@ from sqlalchemy import select, update, delete
 from database import new_session, TaskOrm
 from schemas import STaskAdd, STaskUpdate
 from typing import Optional
+from sqlalchemy import select, update, delete, asc, desc
 
 class TaskRepository:
     @classmethod
@@ -24,7 +25,8 @@ class TaskRepository:
     @classmethod
     async def get_tasks(cls, sort_by: str = "created_date"):
         async with new_session() as session:
-            query = select(TaskOrm).order_by(getattr(TaskOrm, sort_by))
+            order = asc(sort_by) if sort_by != "priority" else desc(sort_by)
+            query = select(TaskOrm).order_by(order)
             result = await session.execute(query)
             return result.scalars().all()
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from repository import TaskRepository
-from schemas import STask, STaskAdd, STaskId, STaskUpdate
+from schemas import STask, STaskAdd, STaskId, STaskUpdate, TaskStatus
 from fastapi import HTTPException, status
 
 router = APIRouter(
@@ -10,7 +10,11 @@ router = APIRouter(
 
 @router.post("", response_model=STask)
 async def add_task(task: STaskAdd):
-    new_task_id = await TaskRepository.add_task(task)
+    task_data = task.model_dump()
+    if isinstance(task_data["status"], TaskStatus):
+        task_data["status"] = task_data["status"].value
+
+    new_task_id = await TaskRepository.add_task(STaskAdd(**task_data))
     return await TaskRepository.get_task(new_task_id)
 
 @router.get("", response_model=list[STask])

@@ -1,12 +1,12 @@
-# tests/test_api.py
 def test_create_task(test_client):
     response = test_client.post("/tasks", json={
         "title": "Test",
         "priority": 1,
-        "status": "PENDING"  # Используем значение Enum
+        "status": "в ожидании"  # Используем значение вместо имени константы
     })
     assert response.status_code == 200
     assert response.json()["status"] == "в ожидании"
+
 
 
 def test_create_task_invalid_data(test_client):

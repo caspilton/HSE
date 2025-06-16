@@ -15,9 +15,13 @@ class STaskAdd(BaseModel):
     status: TaskStatus = TaskStatus.PENDING
     priority: int = Field(1, ge=1, le=5)
 
-    @field_validator('status')
+    @field_validator("status", mode="before")
     def validate_status(cls, v):
-        return v.value if isinstance(v, TaskStatus) else v
+        if isinstance(v, TaskStatus):
+            return v
+        if v in [s.value for s in TaskStatus]:
+            return TaskStatus(v)
+        raise ValueError("Invalid status value")
 
 class STaskUpdate(BaseModel):
     title: Optional[str] = None
